@@ -21,7 +21,25 @@ const EP_OUT = 0x02 & 0x0f;
 // i18n
 // ============================================================
 
-const LOCALE = (navigator.language || 'en').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+/**
+ * 言語判定：
+ * 1. URL `?lang=ja|en` が最優先
+ * 2. なければ navigator.languages の優先順で最初にマッチした方
+ *    （ja/en どちらも優先リストに無ければ en にフォールバック）
+ */
+function detectLocale() {
+  const fromUrl = new URLSearchParams(location.search).get('lang');
+  if (fromUrl === 'ja' || fromUrl === 'en') return fromUrl;
+  const langs = navigator.languages?.length ? navigator.languages : [navigator.language || 'en'];
+  for (const lang of langs) {
+    const lc = (lang || '').toLowerCase();
+    if (lc.startsWith('en')) return 'en';
+    if (lc.startsWith('ja')) return 'ja';
+  }
+  return 'en';
+}
+
+const LOCALE = detectLocale();
 
 const T = {
   ja: {
@@ -1201,6 +1219,10 @@ async function readAndDump(addr) {
 // ----- 起動 -----
 
 applyTranslations(document);
+// 言語スイッチャの active 表示
+const langSwitch = document.getElementById('lang-' + LOCALE);
+if (langSwitch) langSwitch.classList.add('active');
+log(`locale=${LOCALE} (navigator.languages=${(navigator.languages || []).join(',')})`);
 
 if (!('usb' in navigator)) {
   setStatus(t('status.no_webusb'), 'ng');

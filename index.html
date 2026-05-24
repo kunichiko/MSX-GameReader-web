@@ -44,6 +44,9 @@
     line-height: 1.55;
   }
   header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  nav.lang { font-size: 0.85rem; }
+  nav.lang a { padding: 3px 8px; border-radius: 5px; text-decoration: none; color: var(--muted); }
+  nav.lang a.active { background: var(--accent); color: white; }
   h1 { font-size: 1.4rem; margin: 0; }
   .subtitle { color: var(--muted); font-size: 0.9rem; }
   .pills { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -188,6 +191,10 @@
     <h1>MSX Game Reader — Web Dumper</h1>
     <div class="subtitle" data-i18n="app.subtitle">MSX Game Reader を使って、実カートリッジから ROM イメージをダンプします。</div>
   </div>
+  <nav class="lang">
+    <a href="?lang=ja" id="lang-ja">日本語</a>
+    <a href="?lang=en" id="lang-en">English</a>
+  </nav>
   <div class="pills">
     <span id="status-pill" class="pill" data-i18n="status.disconnected">未接続</span>
     <span id="db-pill" class="pill" data-i18n="db.notLoaded">DB: 未ロード</span>
