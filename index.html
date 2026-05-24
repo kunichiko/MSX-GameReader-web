@@ -160,6 +160,31 @@
     color: var(--accent);
   }
   .busy-indicator[hidden] { display: none; }
+
+  /* エラーアラート */
+  .error-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    background: color-mix(in srgb, var(--ng) 12%, var(--card));
+    border-left: 4px solid var(--ng);
+    border-radius: 8px;
+    color: var(--ng);
+    box-shadow: var(--shadow);
+  }
+  .error-alert[hidden] { display: none; }
+  .error-alert .alert-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+  .error-alert .alert-body { flex: 1; min-width: 0; }
+  .error-alert .alert-title { font-weight: 600; margin-bottom: 2px; }
+  .error-alert .alert-detail { color: var(--text); font-size: 0.9rem; word-break: break-word; }
+  .error-alert .alert-close {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--ng); font-size: 1.5rem; line-height: 1;
+    padding: 0 6px; margin: -2px -4px 0 0; flex-shrink: 0;
+  }
+  .error-alert .alert-close:hover { background: color-mix(in srgb, var(--ng) 20%, transparent); border-radius: 6px; }
   .spinner {
     display: inline-block;
     width: 16px; height: 16px;
@@ -229,6 +254,16 @@
 
 <div class="hero-photo">
   <img src="./images/msx-game-reader.jpg" alt="MSX Game Reader (ASCII / Sunrise) with a Konami Salamander cartridge inserted, power LED lit">
+</div>
+
+<!-- エラーアラート（タイムアウト等で表示） -->
+<div id="error-alert" class="error-alert" role="alert" hidden>
+  <span class="alert-icon" aria-hidden="true">⚠️</span>
+  <div class="alert-body">
+    <div class="alert-title" id="error-title">Error</div>
+    <div class="alert-detail" id="error-detail"></div>
+  </div>
+  <button class="alert-close" id="error-close" aria-label="Dismiss" data-i18n-title="error.dismiss">×</button>
 </div>
 
 <!-- プラットフォーム別の注意 -->

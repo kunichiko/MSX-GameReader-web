@@ -50,7 +50,7 @@ const T = {
     'status.connectFailed': '接続失敗',
     'status.lost': '切断されました',
     'status.no_webusb': 'このブラウザは WebUSB をサポートしていません（Chrome / Edge / Opera を使ってください）',
-    'log.ready': 'READY — まず [GetSlotStatus] を押してください',
+    'log.ready': 'READY',
     'trim.none': '無し',
     'trim.ffStripped': '末尾 0xFF バンク × {0} 除去',
     'trim.mirrorHalved': 'ミラー検出による半減',
@@ -64,6 +64,10 @@ const T = {
     'busy.reading': '読み出し中…',
     'busy.connecting': '接続処理中…',
     'busy.statusCheck': 'スロット状態取得中…',
+    'error.title': '{0} でエラー',
+    'error.timeoutHint': 'タイムアウトしました。USB 接続を確認し、必要なら一度 Disconnect → Connect し直してください。macOS 26 / Android 環境では本機の制御転送が OS によりブロックされるため動作しません。',
+    'error.genericHint': 'ログを開いて詳細を確認してください。',
+    'error.dismiss': '閉じる',
     'db.notLoaded': 'DB: 未ロード',
     'db.loading': 'DB: ロード中…',
     'db.loaded': 'DB: {0} entries ✓',
@@ -124,7 +128,7 @@ const T = {
     'status.connectFailed': 'Connection failed',
     'status.lost': 'Device disconnected',
     'status.no_webusb': 'This browser does not support WebUSB. Use Chrome / Edge / Opera.',
-    'log.ready': 'READY — click [GetSlotStatus] first',
+    'log.ready': 'READY',
     'trim.none': 'None',
     'trim.ffStripped': 'trailing 0xFF banks × {0} stripped',
     'trim.mirrorHalved': 'halved (mirror detected)',
@@ -138,6 +142,10 @@ const T = {
     'busy.reading': 'Reading…',
     'busy.connecting': 'Connecting…',
     'busy.statusCheck': 'Checking slot status…',
+    'error.title': '{0} failed',
+    'error.timeoutHint': 'The operation timed out. Check the USB connection and try Disconnect → Connect. On macOS 26 / Android the OS blocks vendor control transfers; the device will not work there.',
+    'error.genericHint': 'Open the log section below for details.',
+    'error.dismiss': 'Dismiss',
     'db.notLoaded': 'DB: not loaded',
     'db.loading': 'DB: loading…',
     'db.loaded': 'DB: {0} entries ✓',
@@ -254,6 +262,26 @@ function setProgress(percent) {
     wrap.hidden = false;
     $('progress-bar').style.width = `${Math.max(0, Math.min(100, percent))}%`;
   }
+}
+
+/**
+ * エラーアラートを画面上部に表示。タイムアウトや想定外エラーで使う。
+ * 通常エラーはハイライト＋ヒント、タイムアウトは追加の対処ヒントを含める。
+ */
+function showError(label, message) {
+  const el = $('error-alert');
+  if (!el) return;
+  $('error-title').textContent = t('error.title', label);
+  const isTimeout = /timed out|disconnected/i.test(message);
+  const hint = isTimeout ? t('error.timeoutHint') : t('error.genericHint');
+  $('error-detail').innerHTML = `<div style="margin-bottom:6px">${message}</div><div style="opacity:0.85">${hint}</div>`;
+  el.hidden = false;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearError() {
+  const el = $('error-alert');
+  if (el) el.hidden = true;
 }
 
 /**
@@ -1113,11 +1141,13 @@ async function onResetDevice() {
 }
 
 async function safeRun(label, fn, busyLabelKey = 'busy.running') {
+  clearError();
   setBusy(busyLabelKey);
   try {
     await fn();
   } catch (e) {
     log(`<span style="color:#c00">${label} error: ${e.message}</span>`);
+    showError(label, e.message);
     // タイムアウト等で詰まったら自動 disconnect。これをやらないと
     // macOS で USB ロックが残り続けて他アプリ/再リロードからアクセスできなくなる。
     if (/timed out|disconnected/i.test(e.message)) {
@@ -1300,6 +1330,7 @@ if (!('usb' in navigator)) {
     hex.hidden = !hex.hidden;
     $('btn-show-hex').textContent = hex.hidden ? t('btn.showHex') : t('btn.hideHex');
   });
+  $('error-close').addEventListener('click', clearError);
 
   // ホットプラグ対応
   navigator.usb.addEventListener('disconnect', (e) => {
