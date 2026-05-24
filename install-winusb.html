@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>MSX Game Reader — WinUSB Install Guide</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f5f7; --card: #ffffff; --border: rgba(0,0,0,0.08);
+    --text: #1d1d1f; --muted: #6e6e73;
+    --accent: #0071e3; --accent-hover: #0077ed;
+    --ok: #008009; --warn: #d28100; --ng: #d80000;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1d1d1f; --card: #2d2d2f; --border: rgba(255,255,255,0.08);
+      --text: #f5f5f7; --muted: #98989d;
+      --accent: #0a84ff; --accent-hover: #2997ff;
+      --ok: #03a10e; --warn: #ff9f0a; --ng: #ff3b30;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    background: var(--bg); color: var(--text);
+    max-width: 820px; margin: 0 auto; padding: 20px 16px 64px; line-height: 1.7;
+  }
+  header { margin-bottom: 24px; }
+  h1 { font-size: 1.5rem; margin: 0 0 6px; }
+  .subtitle { color: var(--muted); }
+  nav.lang { float: right; }
+  nav.lang a { padding: 4px 10px; border-radius: 6px; text-decoration: none; color: var(--muted); }
+  nav.lang a.active { background: var(--accent); color: white; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 22px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  h2 { font-size: 1.15rem; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  h2:first-child { margin-top: 0; }
+  ol, ul { padding-left: 24px; }
+  ol li { margin-bottom: 8px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: color-mix(in srgb, var(--text) 6%, var(--card)); padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
+  .warn { background: color-mix(in srgb, var(--warn) 12%, var(--card)); border-left: 3px solid var(--warn); padding: 10px 14px; border-radius: 6px; }
+  .note { background: color-mix(in srgb, var(--accent) 8%, var(--card)); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  a { color: var(--accent); }
+  .back-link { display: inline-block; margin-bottom: 16px; font-size: 0.9rem; }
+  [data-lang] { display: none; }
+  html[data-active-lang="ja"] [data-lang="ja"] { display: block; }
+  html[data-active-lang="ja"] [data-lang="ja"].inline { display: inline; }
+  html[data-active-lang="en"] [data-lang="en"] { display: block; }
+  html[data-active-lang="en"] [data-lang="en"].inline { display: inline; }
+</style>
+</head>
+<body>
+
+<nav class="lang">
+  <a href="?lang=ja" id="lang-ja">日本語</a>
+  <a href="?lang=en" id="lang-en">English</a>
+</nav>
+
+<header>
+  <a href="./" class="back-link">← <span data-lang="ja" class="inline">Dumper に戻る</span><span data-lang="en" class="inline">Back to Dumper</span></a>
+  <h1>MSX Game Reader — <span data-lang="ja" class="inline">WinUSB ドライバ インストールガイド</span><span data-lang="en" class="inline">WinUSB Driver Install Guide</span></h1>
+  <div class="subtitle">
+    <span data-lang="ja" class="inline">Windows で MSX Game Reader をブラウザ／libusb から使うための手順</span>
+    <span data-lang="en" class="inline">How to make MSX Game Reader accessible from browser / libusb on Windows</span>
+  </div>
+</header>
+
+<!-- ============================================================ 日本語 -->
+<div data-lang="ja">
+  <div class="card">
+    <h2>なぜ WinUSB ドライバが必要？</h2>
+    <p>
+      MSX Game Reader は USB のベンダクラスデバイス（クラスコード 0xFF）で、Windows 標準のクラスドライバとは関連付けられません。
+      公式の専用ドライバ（Jungo WinDriver 系）は 32bit Windows XP 専用で、現在の 64bit Windows 10/11 では事実上使えません。
+    </p>
+    <p>
+      その代わり、Microsoft 製の汎用ドライバ <code>WinUSB.sys</code> を割り当てれば、ブラウザの WebUSB API や libusb 系のツールから直接アクセスできるようになります。
+      <strong>Zadig などの外部ツールは不要</strong>で、Windows 標準のデバイスマネージャーだけで完結します。
+    </p>
+    <div class="note">
+      この手順は Microsoft の
+      <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation" target="_blank" rel="noopener">公式情報</a>
+      に基づきます。Mimic X 用の同種手順（<a href="https://kunichiko.ohnaka.jp/products/mimicx/install-winusb" target="_blank" rel="noopener">こちら</a>）と同じ流れですが、Game Reader には BOOT モードのような時間制約はありません。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>WinUSB の割り当て手順</h2>
+    <ol>
+      <li>
+        <strong>MSX Game Reader を USB で PC に接続</strong>します。<br>
+        Windows がデバイスを認識するまで数秒待ってください。
+      </li>
+      <li>
+        スタートメニューから「<strong>デバイス マネージャー</strong>」を起動します。
+      </li>
+      <li>
+        「<strong>ほかのデバイス</strong>」（または「ユニバーサル シリアル バス デバイス」）の下に、<strong>不明なデバイス</strong>として MSX Game Reader が表示されます。
+      </li>
+      <li>
+        右クリックして「<strong>プロパティ</strong>」を開き、「詳細」タブで「ハードウェア ID」を選び、
+        <code>USB\VID_1125&amp;PID_AC01</code> が表示されていることを確認してください。
+        （これが MSX Game Reader です）
+      </li>
+      <li>
+        「<strong>ドライバー</strong>」タブを開き、「<strong>ドライバーの更新</strong>」ボタンを押します。
+      </li>
+      <li>
+        「<strong>コンピューターを参照してドライバーを検索</strong>」を選びます。
+      </li>
+      <li>
+        「<strong>コンピューター上の利用可能なドライバーの一覧から選択します</strong>」を選びます。
+      </li>
+      <li>
+        「すべてのデバイスを表示」を選んで「次へ」を押し、表示される一覧から
+        「<strong>ユニバーサル シリアル バス デバイス</strong>」を選択して「次へ」を押します。
+      </li>
+      <li>
+        「製造元」のリストから「<strong>WinUsb デバイス</strong>」、「モデル」から「<strong>WinUsb デバイス</strong>」を選び、「次へ」を押します。
+      </li>
+      <li>
+        セキュリティの警告が出たら「<strong>はい</strong>」（インストールを続行）を押します。
+      </li>
+      <li>
+        インストール完了後、デバイスマネージャーで「<strong>ユニバーサル シリアル バス デバイス</strong>」の下に新しい項目（WinUsb デバイス）として表示されていれば成功です。
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>動作確認</h2>
+    <p>
+      <a href="./">Web Dumper</a> を Chrome / Edge / Opera で開き、「Connect」ボタンを押してください。
+      デバイス選択ダイアログに「不明なデバイス (1125:AC01)」のような項目が現れれば、ドライバの割り当ては成功しています。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>うまくいかない場合</h2>
+    <ul>
+      <li>
+        <strong>デバイスマネージャーに何も出てこない</strong>：<br>
+        USB ケーブルや別のポートに変えて試してください。MSX Game Reader 本体の LED が光らない場合は電源が来ていません。
+      </li>
+      <li>
+        <strong>「WinUsb デバイス」が一覧に出ない</strong>：<br>
+        Windows のバージョンが古い可能性があります。Windows 10 1709 以降、または Windows 11 を推奨します。
+      </li>
+      <li>
+        <strong>ドライバを元に戻したい</strong>：<br>
+        デバイスマネージャーで該当デバイスを右クリック → 「デバイスのアンインストール」→「このデバイスのドライバーを削除」にチェックを入れて実行。
+        その後、USB を抜き差しすれば「不明なデバイス」状態に戻ります。
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ English -->
+<div data-lang="en">
+  <div class="card">
+    <h2>Why do I need a WinUSB driver?</h2>
+    <p>
+      MSX Game Reader is a USB vendor-class device (class code 0xFF) and is not associated with any standard Windows class driver.
+      The official vendor driver (based on Jungo WinDriver) is for 32-bit Windows XP only and is effectively unusable on current 64-bit Windows 10/11.
+    </p>
+    <p>
+      Instead, by binding Microsoft's generic <code>WinUSB.sys</code> driver, you can access the device directly from browsers via the WebUSB API or from libusb-based tools.
+      <strong>No external tools such as Zadig are required</strong>; everything can be done through Windows Device Manager.
+    </p>
+    <div class="note">
+      This procedure is based on Microsoft's
+      <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation" target="_blank" rel="noopener">official documentation</a>.
+      It follows the same steps as the Mimic X guide (<a href="https://kunichiko.ohnaka.jp/products/mimicx/install-winusb" target="_blank" rel="noopener">here</a>), but Game Reader has no time constraint like BOOT mode.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Steps to assign WinUSB</h2>
+    <ol>
+      <li>
+        <strong>Connect MSX Game Reader to your PC via USB</strong>.<br>
+        Wait a few seconds for Windows to detect the device.
+      </li>
+      <li>
+        Open <strong>Device Manager</strong> from the Start menu.
+      </li>
+      <li>
+        Under <strong>"Other devices"</strong> (or "Universal Serial Bus devices"), an <strong>Unknown device</strong> entry will appear for the MSX Game Reader.
+      </li>
+      <li>
+        Right-click → <strong>Properties</strong>. Switch to the "Details" tab, select "Hardware Ids", and verify that
+        <code>USB\VID_1125&amp;PID_AC01</code> is shown. (This identifies the MSX Game Reader.)
+      </li>
+      <li>
+        Switch to the <strong>"Driver"</strong> tab and click <strong>"Update Driver"</strong>.
+      </li>
+      <li>
+        Choose <strong>"Browse my computer for drivers"</strong>.
+      </li>
+      <li>
+        Choose <strong>"Let me pick from a list of available drivers on my computer"</strong>.
+      </li>
+      <li>
+        Select <strong>"Show all devices"</strong> and click Next.
+        From the list, choose <strong>"Universal Serial Bus devices"</strong> and click Next.
+      </li>
+      <li>
+        Choose <strong>"WinUsb Device"</strong> as the Manufacturer and <strong>"WinUsb Device"</strong> as the Model.
+        Click Next.
+      </li>
+      <li>
+        If a security warning appears, click <strong>"Yes"</strong> to proceed with the installation.
+      </li>
+      <li>
+        After installation, the device will appear as a new entry (WinUsb Device) under <strong>"Universal Serial Bus devices"</strong> in Device Manager. Success!
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Verification</h2>
+    <p>
+      Open the <a href="./">Web Dumper</a> in Chrome / Edge / Opera and click the "Connect" button.
+      If "Unknown device (1125:AC01)" or similar appears in the device selection dialog, the driver binding is successful.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li>
+        <strong>Nothing shows up in Device Manager</strong>:<br>
+        Try a different USB cable or port. If the LED on the MSX Game Reader doesn't light up, the device isn't getting power.
+      </li>
+      <li>
+        <strong>"WinUsb Device" is not in the list</strong>:<br>
+        Your Windows version may be too old. Windows 10 1709 or later, or Windows 11, is recommended.
+      </li>
+      <li>
+        <strong>Reverting the driver</strong>:<br>
+        Right-click the device in Device Manager → "Uninstall device" → check "Delete the driver software for this device" → OK.
+        Then replug the USB to return to the "Unknown device" state.
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  // 言語切替：URL ?lang=xx 優先、なければ navigator.language
+  const params = new URLSearchParams(location.search);
+  const wantLang = params.get('lang');
+  const lang = (wantLang === 'ja' || wantLang === 'en')
+    ? wantLang
+    : ((navigator.language || 'en').toLowerCase().startsWith('ja') ? 'ja' : 'en');
+  document.documentElement.dataset.activeLang = lang;
+  document.documentElement.lang = lang;
+  document.getElementById('lang-' + lang).classList.add('active');
+</script>
+
+</body>
+</html>

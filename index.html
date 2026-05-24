@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>MSX Game Reader — Web Dumper</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --ok: #008009;
+    --warn: #d28100;
+    --ng: #d80000;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1d1d1f;
+      --card: #2d2d2f;
+      --border: rgba(255,255,255,0.08);
+      --text: #f5f5f7;
+      --muted: #98989d;
+      --accent: #0a84ff;
+      --accent-hover: #2997ff;
+      --ok: #03a10e;
+      --warn: #ff9f0a;
+      --ng: #ff3b30;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+    line-height: 1.55;
+  }
+  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  h1 { font-size: 1.4rem; margin: 0; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 999px; font-size: 0.85rem;
+    background: var(--border); color: var(--text);
+  }
+  .pill.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+  .pill.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .pill.ng { background: color-mix(in srgb, var(--ng) 18%, transparent); color: var(--ng); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 { margin: 0 0 12px; font-size: 1.05rem; }
+  .card h3 { margin: 0 0 10px; font-size: 0.95rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  button {
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 8px 14px;
+    margin: 2px 6px 2px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .1s, transform .05s;
+  }
+  button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-size: 1.05rem;
+    padding: 14px 24px;
+    font-weight: 600;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+  button.download {
+    background: color-mix(in srgb, var(--ok) 14%, var(--card));
+    border-color: color-mix(in srgb, var(--ok) 30%, var(--border));
+    color: var(--ok);
+    font-weight: 600;
+  }
+  button.download:hover:not(:disabled) { background: color-mix(in srgb, var(--ok) 22%, var(--card)); }
+  select, input {
+    font-family: inherit;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+  }
+  label { font-size: 0.9rem; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+  pre, code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; }
+  pre { background: color-mix(in srgb, var(--text) 5%, var(--card)); padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre; margin: 4px 0; }
+  details { margin-bottom: 16px; }
+  details summary { cursor: pointer; padding: 8px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; user-select: none; }
+  details[open] summary { border-radius: 8px 8px 0 0; border-bottom: none; }
+  details[open] .card { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; }
+
+  /* プラットフォーム別の注意 */
+  .notice {
+    background: color-mix(in srgb, var(--accent) 8%, var(--card));
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin: 8px 0;
+    font-size: 0.9rem;
+  }
+  .notice a { color: var(--accent); }
+  .notice.notice-warn {
+    background: color-mix(in srgb, var(--warn) 10%, var(--card));
+    border-left-color: var(--warn);
+  }
+  .notice.notice-warn a { color: var(--warn); }
+
+  /* Progress */
+  #progress-wrap { margin-top: 10px; }
+  #progress-bar-outer { background: color-mix(in srgb, var(--text) 8%, var(--card)); height: 8px; border-radius: 4px; overflow: hidden; }
+  #progress-bar { background: var(--accent); height: 100%; width: 0; transition: width .15s; }
+
+  /* Result card */
+  .result-empty { color: var(--muted); font-style: italic; }
+  .result-title { font-size: 1.2rem; margin-bottom: 4px; }
+  .result-subtitle { color: var(--muted); margin-bottom: 12px; font-size: 0.95rem; }
+  .meta-grid { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0 12px; font-size: 0.9rem; }
+  .meta-grid dt { color: var(--muted); }
+  .meta-grid dd { margin: 0; }
+  .hash-block { background: color-mix(in srgb, var(--text) 4%, var(--card)); padding: 8px 12px; border-radius: 6px; margin: 8px 0; word-break: break-all; }
+  .hash-block .hash-label { color: var(--muted); font-size: 0.85rem; }
+
+  /* History table */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .history-table th, .history-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  .history-table th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .history-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .history-table .num { color: var(--muted); }
+
+  /* Log */
+  .log { font-family: ui-monospace, monospace; font-size: 0.82rem; max-height: 360px; overflow-y: auto; padding: 4px 0; }
+  .log .line { padding: 2px 0; }
+  .log .ts { color: var(--muted); margin-right: 4px; }
+
+  fieldset { border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+  fieldset legend { padding: 0 6px; color: var(--muted); font-size: 0.85rem; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MSX Game Reader — Web Dumper</h1>
+    <div class="subtitle" data-i18n="app.subtitle">MSX Game Reader を使って、実カートリッジから ROM イメージをダンプします。</div>
+  </div>
+  <div class="pills">
+    <span id="status-pill" class="pill" data-i18n="status.disconnected">未接続</span>
+    <span id="db-pill" class="pill" data-i18n="db.notLoaded">DB: 未ロード</span>
+  </div>
+</header>
+
+<!-- プラットフォーム別の注意 -->
+<div class="notice" data-i18n-html="browser.notice"></div>
+<div class="notice" data-i18n-html="winusb.notice"></div>
+<div class="notice notice-warn" data-i18n-html="macos.notice"></div>
+
+<!-- 接続 -->
+<div class="card">
+  <div class="row">
+    <button id="btn-connect" data-i18n="btn.connect">Connect</button>
+    <button id="btn-disconnect" disabled data-i18n="btn.disconnect">Disconnect</button>
+    <button id="btn-reset" disabled data-i18n="btn.reset">Reset device</button>
+  </div>
+</div>
+
+<!-- メインアクション：自動ダンプ -->
+<div class="card">
+  <h2 data-i18n="section.autoDump">カートリッジを自動ダンプ</h2>
+  <div class="row">
+    <button id="btn-dump-auto" class="primary" disabled data-i18n="btn.autoDump">📀 自動マッパー判定 + ダンプ</button>
+    <label>
+      <span data-i18n="autoDump.maxScan">最大スキャン:</span>
+      <select id="max-banks">
+        <option value="4">64 KB</option>
+        <option value="8">128 KB</option>
+        <option value="16">256 KB</option>
+        <option value="32">512 KB</option>
+        <option value="64" selected>1 MB</option>
+        <option value="128">2 MB</option>
+      </select>
+    </label>
+    <span class="subtitle" data-i18n="autoDump.hint">（実 ROM が小さければ自動的に早期停止）</span>
+  </div>
+  <div id="progress-wrap" hidden>
+    <div id="progress-bar-outer"><div id="progress-bar"></div></div>
+  </div>
+</div>
+
+<!-- 直近のダンプ結果カード -->
+<div class="card" id="result-card">
+  <h3 data-i18n="section.lastResult">直近のダンプ結果</h3>
+  <div id="result-empty" class="result-empty" data-i18n="result.empty">まだダンプしていません。</div>
+  <div id="result-content" hidden>
+    <div class="result-title" id="r-title">—</div>
+    <div class="result-subtitle" id="r-subtitle">—</div>
+    <dl class="meta-grid">
+      <dt data-i18n="field.mapper">Mapper (detected)</dt>      <dd id="r-mapper">—</dd>
+      <dt data-i18n="field.mapperDb">Mapper (DB expected)</dt>  <dd id="r-mapper-db">—</dd>
+      <dt data-i18n="field.size">Size</dt>                       <dd id="r-size">—</dd>
+      <dt data-i18n="field.timeSpeed">Time / Speed</dt>          <dd id="r-speed">—</dd>
+      <dt data-i18n="field.trim">Trim</dt>                       <dd id="r-trim">—</dd>
+      <dt data-i18n="field.romHeader">ROM Header</dt>            <dd id="r-header">—</dd>
+    </dl>
+    <div class="hash-block">
+      <div><span class="hash-label">SHA-1 </span><code id="r-sha1">—</code></div>
+      <div><span class="hash-label">SHA-256 </span><code id="r-sha256">—</code></div>
+    </div>
+    <div class="row">
+      <button id="btn-redownload" class="download" data-i18n="btn.download">↓ Download</button>
+      <button id="btn-show-hex" data-i18n="btn.showHex">Show hex preview</button>
+      <span id="r-filename" class="subtitle mono"></span>
+    </div>
+    <pre id="r-hex" hidden></pre>
+  </div>
+</div>
+
+<!-- セッション履歴 -->
+<div class="card" id="history-card" hidden>
+  <h3 data-i18n="section.history">このセッションのダンプ履歴</h3>
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th data-i18n="history.col.num">#</th>
+        <th data-i18n="history.col.title">タイトル</th>
+        <th data-i18n="history.col.mapper">マッパー</th>
+        <th data-i18n="history.col.size">サイズ</th>
+        <th data-i18n="history.col.db">DB</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="history-body"></tbody>
+  </table>
+</div>
+
+<!-- 詳細・上級機能 -->
+<details>
+  <summary data-i18n="section.advanced">🛠 Advanced（個別テスト・プレーン dump・マッパー判定）</summary>
+  <div class="card">
+
+    <fieldset>
+      <legend data-i18n="advanced.connectivity">疎通テスト</legend>
+      <button id="btn-status" disabled>GetSlotStatus</button>
+      <button id="btn-read-0000" disabled>MemoryRead(0x0000, 64)</button>
+      <button id="btn-read-4000" disabled>MemoryRead(0x4000, 64) — CS1</button>
+      <button id="btn-read-8000" disabled>MemoryRead(0x8000, 64) — CS2</button>
+    </fieldset>
+
+    <fieldset>
+      <legend data-i18n="advanced.plainDump">プレーン ROM 専用ダンプ（マッパー無しカートリッジのみ）</legend>
+      <button id="btn-dump-cart" disabled data-i18n="btn.dumpCart32">カートリッジ領域 (32KB: 0x4000–0xBFFF)</button>
+      <button id="btn-dump-full" disabled data-i18n="btn.dumpFull64">メモリ全域 (64KB)</button>
+      <label style="margin-left:12px; font-size:0.85em">
+        <span data-i18n="advanced.chunkSize">チャンクサイズ:</span>
+        <select id="chunk-size">
+          <option value="16384" selected>16 KB</option>
+          <option value="8192">8 KB</option>
+          <option value="4096">4 KB</option>
+          <option value="2048">2 KB</option>
+          <option value="1024">1 KB</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend data-i18n="advanced.detectOnly">マッパー判定のみ実行</legend>
+      <button id="btn-detect" disabled data-i18n="advanced.detectBtn">マッパー種別を判定（ダンプはしない）</button>
+    </fieldset>
+
+  </div>
+</details>
+
+<!-- ログ -->
+<details>
+  <summary data-i18n="section.log">📜 Log</summary>
+  <div class="card">
+    <div id="log" class="log"></div>
+  </div>
+</details>
+
+<script>
+  // i18n: notice にリンクを動的に組み立てる前に、HTML テキスト内のリンク部分を一旦埋める
+  // (data-i18n-html で T['winusb.notice'] が来るが、リンク先を contains しないので別途追加)
+</script>
+
+<script type="module" src="./msx-game-reader.js"></script>
+</body>
+</html>
