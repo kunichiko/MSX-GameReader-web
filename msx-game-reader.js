@@ -45,9 +45,25 @@ const T = {
   ja: {
     'app.subtitle': 'MSX Game Reader を使って、実カートリッジから ROM イメージをダンプします。',
     'status.disconnected': '未接続',
+    'status.disconnected.hint': '未接続 — [Connect] を押してください',
     'status.connected_prefix': '接続中',
+    'status.connectFailed': '接続失敗',
     'status.lost': '切断されました',
     'status.no_webusb': 'このブラウザは WebUSB をサポートしていません（Chrome / Edge / Opera を使ってください）',
+    'log.ready': 'READY — まず [GetSlotStatus] を押してください',
+    'trim.none': '無し',
+    'trim.ffStripped': '末尾 0xFF バンク × {0} 除去',
+    'trim.mirrorHalved': 'ミラー検出による半減',
+    'sizeNote.postTrim': '✅ post-trim で実 ROM size を推定',
+    'sizeNote.earlyStop': '✅ early-stop でバンク 0 ミラー検出 (実 ROM size と判定)',
+    'sizeNote.maxScanHit': '⚠️ max-scan に到達かつトリム不可。max を上げて再試行を',
+    'log.maxScanWarn': '⚠️ max-scan に到達かつトリム不可。実 ROM が {0} KB より大きい可能性があります。max を上げて再試行してください。',
+    'busy.running': '実行中…',
+    'busy.detecting': 'マッパー判定中…',
+    'busy.dumping': 'ダンプ中…',
+    'busy.reading': '読み出し中…',
+    'busy.connecting': '接続処理中…',
+    'busy.statusCheck': 'スロット状態取得中…',
     'db.notLoaded': 'DB: 未ロード',
     'db.loading': 'DB: ロード中…',
     'db.loaded': 'DB: {0} entries ✓',
@@ -103,9 +119,25 @@ const T = {
   en: {
     'app.subtitle': 'Dumps ROM images from real MSX cartridges using the MSX Game Reader.',
     'status.disconnected': 'Not connected',
+    'status.disconnected.hint': 'Not connected — click [Connect]',
     'status.connected_prefix': 'Connected',
+    'status.connectFailed': 'Connection failed',
     'status.lost': 'Device disconnected',
     'status.no_webusb': 'This browser does not support WebUSB. Use Chrome / Edge / Opera.',
+    'log.ready': 'READY — click [GetSlotStatus] first',
+    'trim.none': 'None',
+    'trim.ffStripped': 'trailing 0xFF banks × {0} stripped',
+    'trim.mirrorHalved': 'halved (mirror detected)',
+    'sizeNote.postTrim': '✅ post-trim recovered actual ROM size',
+    'sizeNote.earlyStop': '✅ early-stop: bank-0 mirror detected (= actual ROM size)',
+    'sizeNote.maxScanHit': '⚠️ Hit max-scan and trim was inconclusive. Try a larger max-scan value.',
+    'log.maxScanWarn': '⚠️ Hit max-scan and trim was inconclusive. Actual ROM may be larger than {0} KB. Try a larger max-scan value.',
+    'busy.running': 'Running…',
+    'busy.detecting': 'Detecting mapper…',
+    'busy.dumping': 'Dumping…',
+    'busy.reading': 'Reading…',
+    'busy.connecting': 'Connecting…',
+    'busy.statusCheck': 'Checking slot status…',
     'db.notLoaded': 'DB: not loaded',
     'db.loading': 'DB: loading…',
     'db.loaded': 'DB: {0} entries ✓',
@@ -224,6 +256,24 @@ function setProgress(percent) {
   }
 }
 
+/**
+ * ビジーインジケータの ON/OFF。`label` を渡すと文言を更新して表示、
+ * `null` で非表示。
+ */
+function setBusy(labelKey) {
+  const ind = $('busy-indicator');
+  const labelEl = $('busy-label');
+  if (!ind) return;
+  if (labelKey) {
+    if (labelEl) labelEl.textContent = t(labelKey);
+    ind.hidden = false;
+    document.body.classList.add('busy');
+  } else {
+    ind.hidden = true;
+    document.body.classList.remove('busy');
+  }
+}
+
 function hexdump(bytes, baseAddr = 0) {
   const lines = [];
   for (let i = 0; i < bytes.length; i += 16) {
@@ -313,12 +363,12 @@ async function sendVendorCmd(bRequest, wValue, wIndex) {
       const dt = (performance.now() - t0).toFixed(1);
       if (r.status === 'ok') {
         SETUP_METHOD = method;
-        log(`  SETUP[${method}] ok (${dt} ms, status=ok) — このセッションは以降 ${method} 方式を使用`);
+        log(`  SETUP[${method}] ok (${dt} ms, status=ok) — using ${method} method for this session`);
         return;
       }
-      log(`  SETUP[${method}] returned status=${r.status}, 次の方式を試行`);
+      log(`  SETUP[${method}] returned status=${r.status}, trying next method`);
     } catch (e) {
-      log(`  SETUP[${method}] failed: ${e.message}, 次の方式を試行`);
+      log(`  SETUP[${method}] failed: ${e.message}, trying next method`);
     }
   }
   throw new Error('SETUP failed: both IN and OUT methods timed out');
@@ -933,7 +983,7 @@ async function dumpMegaROM(romType, maxBanks16K) {
     }
 
     default:
-      throw new Error(`romType ${romType} (${ROM_TYPE_NAMES[romType]}) のダンプは未実装です`);
+      throw new Error(`Dump not implemented for romType ${romType} (${ROM_TYPE_NAMES[romType]})`);
   }
 
   const totalMs = performance.now() - t0;
@@ -1031,10 +1081,10 @@ async function onConnect() {
     setStatus(`${t('status.connected_prefix')}: VID=0x${device.vendorId.toString(16)} PID=0x${device.productId.toString(16)}`, 'ok');
     // ROM DB を背景でロード（初回ダンプ前に間に合えばよい）
     loadRomDb();
-    log('READY — まず [GetSlotStatus] を押してください');
+    log(t('log.ready'));
   } catch (e) {
     log(`<span style="color:#c00">connect error: ${e.message}</span>`);
-    setStatus(`${LOCALE === 'ja' ? '接続失敗' : 'Connection failed'}: ${e.message}`, 'ng');
+    setStatus(`${t('status.connectFailed')}: ${e.message}`, 'ng');
   }
 }
 
@@ -1062,7 +1112,8 @@ async function onResetDevice() {
   }
 }
 
-async function safeRun(label, fn) {
+async function safeRun(label, fn, busyLabelKey = 'busy.running') {
+  setBusy(busyLabelKey);
   try {
     await fn();
   } catch (e) {
@@ -1073,6 +1124,8 @@ async function safeRun(label, fn) {
       log('auto-disconnect due to fatal transfer error');
       await onDisconnect();
     }
+  } finally {
+    setBusy(null);
   }
 }
 
@@ -1084,9 +1137,9 @@ async function onSlotStatus() {
     const slotType = r[0];
     const inserted = r[1] === 0xff;
     const slot     = r[2] === 0x00 ? 'SLOT1' : 'SLOT2';
-    const summary  = `slotType=0x${slotType.toString(16).padStart(2,'0')}  装着=${inserted ? 'YES' : 'NO'}  ${slot}`;
+    const summary  = `slotType=0x${slotType.toString(16).padStart(2,'0')}  inserted=${inserted ? 'YES' : 'NO'}  ${slot}`;
     log(`<b>GetSlotStatus = [${raw}] → ${summary}</b>`);
-  });
+  }, 'busy.statusCheck');
 }
 
 async function onDumpCartridge() {
@@ -1095,7 +1148,7 @@ async function onDumpCartridge() {
     size:       0x8000,         // 32 KB
     label:      'cartridge (32KB)',
     fileSuffix: 'cart32k',
-  }));
+  }), 'busy.dumping');
   setProgress(null);
 }
 
@@ -1105,7 +1158,7 @@ async function onDumpFull() {
     size:       0x10000,        // 64 KB
     label:      'full memory (64KB)',
     fileSuffix: 'full64k',
-  }));
+  }), 'busy.dumping');
   setProgress(null);
 }
 
@@ -1116,8 +1169,8 @@ async function onDetectMapper() {
     const romType = await detectRomType();
     const name = ROM_TYPE_NAMES[romType];
     log(`<b>Mapper = ${name} (romType=${romType})</b>`);
-    log(`デフォルト想定容量: ${ROM_DEFAULT_SIZE_16K[romType] * 16} KB`);
-  });
+    log(`Default assumed size: ${ROM_DEFAULT_SIZE_16K[romType] * 16} KB`);
+  }, 'busy.detecting');
 }
 
 async function onDumpAuto() {
@@ -1160,18 +1213,18 @@ async function onDumpAuto() {
       // 自動 DL はせず、結果カードの Download ボタンに任せる
 
       const trimNote = (() => {
-        if (trim.finalKB === trim.originalKB) return '無し';
+        if (trim.finalKB === trim.originalKB) return t('trim.none');
         const parts = [];
-        if (trim.trimmedFFBanks > 0) parts.push(`末尾0xFFバンク×${trim.trimmedFFBanks}除去`);
-        if (trim.trimmedByMirror) parts.push(`ミラー検出による半減`);
+        if (trim.trimmedFFBanks > 0) parts.push(t('trim.ffStripped', trim.trimmedFFBanks));
+        if (trim.trimmedByMirror) parts.push(t('trim.mirrorHalved'));
         return `${parts.join(' / ')}  (${trim.originalKB}KB → ${trim.finalKB}KB)`;
       })();
 
       const sizeNote = trim.finalKB < trim.originalKB
-        ? '✅ post-trim で実 ROM size 推定'
+        ? t('sizeNote.postTrim')
         : (banks < maxBanks
-            ? '✅ early-stop でバンク 0 ミラー検出 (実 ROM size と判定)'
-            : '⚠️  max-scan に到達かつトリム不可。max を上げて再試行を');
+            ? t('sizeNote.earlyStop')
+            : t('sizeNote.maxScanHit'));
       const richTrimNote = `${trimNote}  /  ${sizeNote}`;
 
       recordDump({
@@ -1196,13 +1249,13 @@ async function onDumpAuto() {
       }
       log(`saved: ${filename}`);
       if (hitMax && trim.finalKB === trim.originalKB) {
-        log(`<span style="color:#d80">⚠️  max-scan に到達かつトリム不可。実 ROM が ${sizeKB} KB より大きい可能性があります。max を上げて再試行してください。</span>`);
+        log(`<span style="color:#d80">${t('log.maxScanWarn', sizeKB)}</span>`);
       }
     } finally {
       XFER_TIMEOUT_MS = savedTimeout;
       setProgress(null);
     }
-  });
+  }, 'busy.dumping');
 }
 
 async function readAndDump(addr) {
@@ -1213,7 +1266,7 @@ async function readAndDump(addr) {
     const dt = (performance.now() - t0).toFixed(1);
     log(`<b>MemoryRead total ${dt} ms, ${r.length} bytes</b>`);
     log(`<pre style="margin:4px 0">${hexdump(r, addr)}</pre>`);
-  });
+  }, 'busy.reading');
 }
 
 // ----- 起動 -----
@@ -1269,5 +1322,5 @@ if (!('usb' in navigator)) {
   window.addEventListener('pagehide', teardown);
   window.addEventListener('beforeunload', teardown);
 
-  setStatus('未接続 — [Connect] を押してください');
+  setStatus(t('status.disconnected.hint'));
 }

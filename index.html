@@ -142,10 +142,35 @@
   }
   .notice.notice-warn a { color: var(--warn); }
 
-  /* Progress */
+  /* Progress + busy indicator */
   #progress-wrap { margin-top: 10px; }
   #progress-bar-outer { background: color-mix(in srgb, var(--text) 8%, var(--card)); height: 8px; border-radius: 4px; overflow: hidden; }
   #progress-bar { background: var(--accent); height: 100%; width: 0; transition: width .15s; }
+
+  .busy-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    margin: 12px 0 4px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--card));
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: var(--accent);
+  }
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* 主要アクション中はメインボタンを少しフェード */
+  body.busy button.primary { opacity: 0.6; }
 
   /* Result card */
   .result-empty { color: var(--muted); font-style: italic; }
@@ -237,6 +262,10 @@
       </select>
     </label>
     <span class="subtitle" data-i18n="autoDump.hint">（実 ROM が小さければ自動的に早期停止）</span>
+  </div>
+  <div id="busy-indicator" class="busy-indicator" hidden>
+    <span class="spinner" aria-hidden="true"></span>
+    <span id="busy-label" data-i18n="busy.running">実行中…</span>
   </div>
   <div id="progress-wrap" hidden>
     <div id="progress-bar-outer"><div id="progress-bar"></div></div>
