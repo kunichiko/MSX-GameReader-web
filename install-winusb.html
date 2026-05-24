@@ -39,8 +39,9 @@
   }
   h2 { font-size: 1.15rem; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
   h2:first-child { margin-top: 0; }
+  h3 { font-size: 1.0rem; margin: 18px 0 8px; }
   ol, ul { padding-left: 24px; }
-  ol li { margin-bottom: 8px; }
+  ol li { margin-bottom: 14px; }
   code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: color-mix(in srgb, var(--text) 6%, var(--card)); padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
   .warn { background: color-mix(in srgb, var(--warn) 12%, var(--card)); border-left: 3px solid var(--warn); padding: 10px 14px; border-radius: 6px; }
   .note { background: color-mix(in srgb, var(--accent) 8%, var(--card)); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
@@ -51,6 +52,24 @@
   html[data-active-lang="ja"] [data-lang="ja"].inline { display: inline; }
   html[data-active-lang="en"] [data-lang="en"] { display: block; }
   html[data-active-lang="en"] [data-lang="en"].inline { display: inline; }
+
+  /* スクショ画像 */
+  figure.screenshot {
+    margin: 12px 0;
+    text-align: center;
+  }
+  figure.screenshot img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+  }
+  figure.screenshot figcaption {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
 </style>
 </head>
 <body>
@@ -84,51 +103,69 @@
     <div class="note">
       この手順は Microsoft の
       <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation" target="_blank" rel="noopener">公式情報</a>
-      に基づきます。Mimic X 用の同種手順（<a href="https://kunichiko.ohnaka.jp/products/mimicx/install-winusb" target="_blank" rel="noopener">こちら</a>）と同じ流れですが、Game Reader には BOOT モードのような時間制約はありません。
+      に基づきます。同じ著者の Mimic X 用の同種手順（<a href="https://kunichiko.ohnaka.jp/products/mimicx/install-winusb" target="_blank" rel="noopener">こちら</a>）と流れは共通です。
     </div>
   </div>
 
   <div class="card">
     <h2>WinUSB の割り当て手順</h2>
-    <ol>
-      <li>
-        <strong>MSX Game Reader を USB で PC に接続</strong>します。<br>
-        Windows がデバイスを認識するまで数秒待ってください。
-      </li>
-      <li>
-        スタートメニューから「<strong>デバイス マネージャー</strong>」を起動します。
-      </li>
-      <li>
-        「<strong>ほかのデバイス</strong>」（または「ユニバーサル シリアル バス デバイス」）の下に、<strong>不明なデバイス</strong>として MSX Game Reader が表示されます。
-      </li>
-      <li>
-        右クリックして「<strong>プロパティ</strong>」を開き、「詳細」タブで「ハードウェア ID」を選び、
-        <code>USB\VID_1125&amp;PID_AC01</code> が表示されていることを確認してください。
-        （これが MSX Game Reader です）
-      </li>
-      <li>
-        「<strong>ドライバー</strong>」タブを開き、「<strong>ドライバーの更新</strong>」ボタンを押します。
-      </li>
-      <li>
-        「<strong>コンピューターを参照してドライバーを検索</strong>」を選びます。
-      </li>
-      <li>
-        「<strong>コンピューター上の利用可能なドライバーの一覧から選択します</strong>」を選びます。
-      </li>
-      <li>
-        「すべてのデバイスを表示」を選んで「次へ」を押し、表示される一覧から
-        「<strong>ユニバーサル シリアル バス デバイス</strong>」を選択して「次へ」を押します。
-      </li>
-      <li>
-        「製造元」のリストから「<strong>WinUsb デバイス</strong>」、「モデル」から「<strong>WinUsb デバイス</strong>」を選び、「次へ」を押します。
-      </li>
-      <li>
-        セキュリティの警告が出たら「<strong>はい</strong>」（インストールを続行）を押します。
-      </li>
-      <li>
-        インストール完了後、デバイスマネージャーで「<strong>ユニバーサル シリアル バス デバイス</strong>」の下に新しい項目（WinUsb デバイス）として表示されていれば成功です。
-      </li>
-    </ol>
+
+    <h3>1. デバイスマネージャーを起動</h3>
+    <p>スタートメニューから「<strong>デバイス マネージャー</strong>」を検索して起動してください。</p>
+
+    <h3>2. MSX Game Reader を USB で接続</h3>
+    <p>USB ケーブルで PC に繋ぐと、デバイスマネージャーの「<strong>ほかのデバイス</strong>」の下に「<strong>不明なデバイス</strong>」として表示されます。</p>
+    <figure class="screenshot">
+      <img src="./images/step2-device-manager.png" alt="デバイスマネージャーに不明なデバイスが現れた状態">
+      <figcaption>「ほかのデバイス」の下に「不明なデバイス」が現れる</figcaption>
+    </figure>
+
+    <h3>3. プロパティで MSX Game Reader であることを確認</h3>
+    <p>「不明なデバイス」を右クリックし、「<strong>プロパティ</strong>」を開きます。</p>
+    <figure class="screenshot">
+      <img src="./images/step3-right-click-property.png" alt="右クリックメニューでプロパティを選ぶ">
+      <figcaption>右クリック → プロパティ</figcaption>
+    </figure>
+    <p>「<strong>詳細</strong>」タブを開き、「プロパティ(P)」のドロップダウンで「<strong>デバイスインスタンスパス</strong>」または「<strong>ハードウェア ID</strong>」を選びます。値が <code>USB\VID_1125&amp;PID_AC01...</code> で始まっていれば、これが MSX Game Reader です。</p>
+    <figure class="screenshot">
+      <img src="./images/step3-vid-check.jpg" alt="詳細タブで VID_1125 PID_AC01 を確認">
+      <figcaption><code>VID_1125&amp;PID_AC01</code> なら正解</figcaption>
+    </figure>
+
+    <h3>4. ドライバーを更新</h3>
+    <p>「<strong>ドライバー</strong>」タブを開き、「<strong>ドライバーの更新</strong>」ボタンを押します。</p>
+    <figure class="screenshot">
+      <img src="./images/step4-driver-tab.png" alt="ドライバータブのドライバーの更新ボタン">
+      <figcaption>「ドライバーの更新」ボタン</figcaption>
+    </figure>
+    <p>「<strong>コンピューターを参照してドライバーを検索</strong>」を選びます。</p>
+    <figure class="screenshot">
+      <img src="./images/step4-browse-pc.png" alt="コンピューターを参照してドライバーを検索">
+    </figure>
+    <p>下の方の「<strong>コンピューター上の利用可能なドライバーの一覧から選択します</strong>」を選びます。</p>
+    <figure class="screenshot">
+      <img src="./images/step4-pick-from-list.png" alt="一覧から選択する">
+    </figure>
+    <p>共通ハードウェアの種類一覧を下にスクロールして「<strong>ユニバーサル シリアル バス デバイス</strong>」を選択し、「次へ」を押します。</p>
+    <figure class="screenshot">
+      <img src="./images/step4-show-all-devices.png" alt="ユニバーサル シリアル バス デバイスを選択">
+    </figure>
+    <figure class="screenshot">
+      <img src="./images/step4-usb-class.png" alt="ユニバーサル シリアル バス デバイス選択画面の続き">
+    </figure>
+    <p>「製造元」から「<strong>WinUsb デバイス</strong>」、「モデル」から「<strong>WinUsb デバイス</strong>」を選び、「次へ」を押します。</p>
+    <figure class="screenshot">
+      <img src="./images/step4-winusb-picker.jpg" alt="WinUsb デバイスを選択">
+      <figcaption>「WinUsb デバイス」-「WinUsb デバイス」</figcaption>
+    </figure>
+    <p>セキュリティ警告が出ることがありますが、「<strong>はい</strong>」を押してインストールを続行します。</p>
+
+    <h3>5. インストール完了</h3>
+    <p>インストールが完了すると、デバイスマネージャーで「<strong>ユニバーサル シリアル バス デバイス</strong>」の下に新たに「WinUsb Device」（または「<strong>不明なデバイス</strong>」が解消された状態）として表示されます。</p>
+    <figure class="screenshot">
+      <img src="./images/step5-success.png" alt="インストール成功">
+      <figcaption>WinUsb デバイスとして認識された</figcaption>
+    </figure>
   </div>
 
   <div class="card">
@@ -173,52 +210,69 @@
     </p>
     <div class="note">
       This procedure is based on Microsoft's
-      <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation" target="_blank" rel="noopener">official documentation</a>.
-      It follows the same steps as the Mimic X guide (<a href="https://kunichiko.ohnaka.jp/products/mimicx/install-winusb" target="_blank" rel="noopener">here</a>), but Game Reader has no time constraint like BOOT mode.
+      <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation" target="_blank" rel="noopener">official documentation</a>
+      and follows the same flow as the author's Mimic X guide (<a href="https://kunichiko.ohnaka.jp/products/mimicx/install-winusb" target="_blank" rel="noopener">here</a>).
     </div>
   </div>
 
   <div class="card">
     <h2>Steps to assign WinUSB</h2>
-    <ol>
-      <li>
-        <strong>Connect MSX Game Reader to your PC via USB</strong>.<br>
-        Wait a few seconds for Windows to detect the device.
-      </li>
-      <li>
-        Open <strong>Device Manager</strong> from the Start menu.
-      </li>
-      <li>
-        Under <strong>"Other devices"</strong> (or "Universal Serial Bus devices"), an <strong>Unknown device</strong> entry will appear for the MSX Game Reader.
-      </li>
-      <li>
-        Right-click → <strong>Properties</strong>. Switch to the "Details" tab, select "Hardware Ids", and verify that
-        <code>USB\VID_1125&amp;PID_AC01</code> is shown. (This identifies the MSX Game Reader.)
-      </li>
-      <li>
-        Switch to the <strong>"Driver"</strong> tab and click <strong>"Update Driver"</strong>.
-      </li>
-      <li>
-        Choose <strong>"Browse my computer for drivers"</strong>.
-      </li>
-      <li>
-        Choose <strong>"Let me pick from a list of available drivers on my computer"</strong>.
-      </li>
-      <li>
-        Select <strong>"Show all devices"</strong> and click Next.
-        From the list, choose <strong>"Universal Serial Bus devices"</strong> and click Next.
-      </li>
-      <li>
-        Choose <strong>"WinUsb Device"</strong> as the Manufacturer and <strong>"WinUsb Device"</strong> as the Model.
-        Click Next.
-      </li>
-      <li>
-        If a security warning appears, click <strong>"Yes"</strong> to proceed with the installation.
-      </li>
-      <li>
-        After installation, the device will appear as a new entry (WinUsb Device) under <strong>"Universal Serial Bus devices"</strong> in Device Manager. Success!
-      </li>
-    </ol>
+
+    <h3>1. Open Device Manager</h3>
+    <p>Search for <strong>Device Manager</strong> from the Start menu and open it.</p>
+
+    <h3>2. Connect the MSX Game Reader via USB</h3>
+    <p>An <strong>Unknown device</strong> entry will appear under <strong>"Other devices"</strong> in Device Manager.</p>
+    <figure class="screenshot">
+      <img src="./images/step2-device-manager.png" alt="Unknown device under Other devices in Device Manager">
+      <figcaption>Unknown device under "Other devices"</figcaption>
+    </figure>
+
+    <h3>3. Confirm via Properties that this is the MSX Game Reader</h3>
+    <p>Right-click the unknown device and select <strong>Properties</strong>.</p>
+    <figure class="screenshot">
+      <img src="./images/step3-right-click-property.png" alt="Right-click Properties">
+      <figcaption>Right-click → Properties</figcaption>
+    </figure>
+    <p>Switch to the <strong>Details</strong> tab. In the Property dropdown, choose <strong>Device instance path</strong> or <strong>Hardware Ids</strong>. If the value starts with <code>USB\VID_1125&amp;PID_AC01...</code>, this is the MSX Game Reader.</p>
+    <figure class="screenshot">
+      <img src="./images/step3-vid-check.jpg" alt="VID_1125 PID_AC01 in Details tab">
+      <figcaption><code>VID_1125&amp;PID_AC01</code> identifies the device</figcaption>
+    </figure>
+
+    <h3>4. Update the driver</h3>
+    <p>Switch to the <strong>Driver</strong> tab and click <strong>Update Driver</strong>.</p>
+    <figure class="screenshot">
+      <img src="./images/step4-driver-tab.png" alt="Driver tab with Update Driver button">
+    </figure>
+    <p>Choose <strong>"Browse my computer for drivers"</strong>.</p>
+    <figure class="screenshot">
+      <img src="./images/step4-browse-pc.png" alt="Browse my computer for drivers">
+    </figure>
+    <p>Choose <strong>"Let me pick from a list of available drivers on my computer"</strong>.</p>
+    <figure class="screenshot">
+      <img src="./images/step4-pick-from-list.png" alt="Pick from a list">
+    </figure>
+    <p>Scroll down the device class list and choose <strong>"Universal Serial Bus devices"</strong>, then click Next.</p>
+    <figure class="screenshot">
+      <img src="./images/step4-show-all-devices.png" alt="Choose Universal Serial Bus devices">
+    </figure>
+    <figure class="screenshot">
+      <img src="./images/step4-usb-class.png" alt="USB class selection continued">
+    </figure>
+    <p>Choose <strong>"WinUsb Device"</strong> as the Manufacturer and <strong>"WinUsb Device"</strong> as the Model, then click Next.</p>
+    <figure class="screenshot">
+      <img src="./images/step4-winusb-picker.jpg" alt="Select WinUsb Device">
+      <figcaption>"WinUsb Device" - "WinUsb Device"</figcaption>
+    </figure>
+    <p>If a security warning appears, click <strong>Yes</strong> to proceed with the installation.</p>
+
+    <h3>5. Installation complete</h3>
+    <p>After installation, the device will appear as <strong>WinUsb Device</strong> under <strong>"Universal Serial Bus devices"</strong> in Device Manager (the previous "Unknown device" entry is resolved).</p>
+    <figure class="screenshot">
+      <img src="./images/step5-success.png" alt="Installation success">
+      <figcaption>Device now recognized as "WinUsb Device"</figcaption>
+    </figure>
   </div>
 
   <div class="card">
